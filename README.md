@@ -1,74 +1,64 @@
-# GCM Data Processing Module
+# Procesar Archivos CSV en Laravel con PHP
 
-Este módulo procesa archivos CSV, los almacena en la base de datos y expone endpoints para que el frontend en Angular construya una matriz. Además, el backend en Laravel ejecuta un script en R que toma los datos desde la base de datos y genera la matriz.
+## Objetivo
+Este repositorio tiene como objetivo estudiar el procesamiento de archivos CSV en Laravel con PHP.
 
-## Características
+## Descripción
+En este proyecto se exploran algunas funciones clave de PHP para trabajar con archivos CSV, enfocándose en la lectura y procesamiento de datos sin cargar todo el archivo en memoria.
 
-- Procesamiento de archivos CSV.
-- Almacenamiento seguro de datos en la base de datos.
-- Exposición de endpoints REST para el frontend.
-- Ejecución de scripts R para análisis de datos.
-- Soporte para filtros dinámicos que recalculan la matriz.
+### Funciones principales utilizadas
 
-## Requisitos
+#### 1. `fopen`
+Esta función permite abrir un archivo CSV y devuelve un **resource**.
 
-- PHP >= 8.1
-- Laravel >= 10.x
-- R instalado en el servidor
-- Base de datos MySQL/MariaDB
-- Node.js >= 18.x (para frontend Angular)
-- Composer y NPM
+- Un *resource* es una especie de puntero que apunta al archivo en memoria.
+- La posición inicial es **0** (inicio del archivo).
+- Cada vez que se lee una línea, ese puntero avanza automáticamente.
 
-## Instalación
+#### 2. `fgetcsv`
+Este método de PHP sirve para **leer una línea de un archivo CSV abierto**.
 
-1. Clonar el repositorio:
-    ```bash
-    git clone https://tu-repo.git
-    cd proyecto-gcm
-    ```
+- Divide la línea en columnas usando el separador por defecto (`,`).
+- Devuelve un **array indexado**, donde cada índice corresponde a una columna de esa línea (fila).
+- Cada valor es el contenido de esa columna como cadena de texto (*string*).
+- Cada vez que llamas a `fgetcsv($handle)`, lee la siguiente línea hasta llegar al final del archivo (**EOF**).
+- Cuando ya no hay más líneas, devuelve `false`.
 
-2. Instalar dependencias de Laravel:
-    ```bash
-    composer install
-    ```
+##### Argumentos principales
+- `$stream`: El resource que obtienes de `fopen()`.
+- `$length` (opcional): Número máximo de bytes a leer.
+    - Si se omite o se coloca en `0`, lee toda la línea hasta encontrar un salto de línea.
+    - Es útil para optimizar memoria en archivos muy grandes.
+- `$separator` (opcional): El delimitador de las columnas. Por defecto `,`. También puedes usar `;`, `	` (tabulador), `|`, etc.
+- `$enclosure` (opcional): El carácter que encierra valores que contienen separadores. Por defecto `"`.  
+  Ejemplo: `"Hola, mundo"` se interpretará como una sola columna, no como dos.
+- `$escape` (opcional): El carácter de escape para valores especiales. Por defecto `\`.
 
-3. Configurar el archivo `.env`:
-    ```bash
-    cp .env.example .env
-    php artisan key:generate
-    ```
+#### Ejemplo de uso
 
-4. Configurar la base de datos y ejecutar migraciones:
-    ```bash
-    php artisan migrate
-    ```
+```php
+$handle = fopen("datos.csv", "r");
 
-5. Instalar dependencias de frontend:
-    ```bash
-    cd frontend
-    npm install
-    ```
+while (($data = fgetcsv($handle, 1000, ";")) !== false) {
+    print_r($data);
+}
 
-## Uso
+fclose($handle);
+```
 
-1. Subir archivos CSV mediante el módulo correspondiente.
-2. Procesar los datos automáticamente.
-3. Consultar la matriz generada a través de los endpoints.
-4. Aplicar filtros según sea necesario.
+#### Firma de la función
 
-## Contribuir
+```php
+fgetcsv(
+    resource $stream,
+    ?int $length = 0,
+    string $separator = ",",
+    string $enclosure = """,
+    string $escape = "\"
+): array|false
+```
 
-1. Hacer un fork del repositorio.
-2. Crear una nueva rama:
-    ```bash
-    git checkout -b feature/nueva-funcionalidad
-    ```
-3. Realizar cambios y hacer commit:
-    ```bash
-    git commit -m "Descripción breve del cambio"
-    ```
-4. Enviar un pull request.
-
-## Licencia
-
-Este proyecto está bajo la licencia MIT.
+## Notas
+- `fgetcsv()` es ideal para leer archivos línea por línea sin cargarlos completamente en memoria.
+- Si necesitas procesar archivos muy grandes, esta es la forma recomendada.
+- Puedes combinarlo con Laravel Jobs o Queues para procesamiento asíncrono.
